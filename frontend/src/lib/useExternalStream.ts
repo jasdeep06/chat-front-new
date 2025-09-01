@@ -4,10 +4,10 @@ import type { Message } from "@langchain/langgraph-sdk";
 type TimelineEvent = { title: string; data: string };
 
 type UseExternalStreamOptions = {
-    apiUrl: string;             // e.g. "http://localhost:9090"
-    streamPath: string;         // e.g. "/my/runs/stream"
+    apiUrl: string;
+    streamPath: string;
     onUpdateEvent?: (e: TimelineEvent) => void;
-    onFinish?: () => void;      // called when final:true arrives
+    onFinish?: () => void;
 };
 
 type SubmitValues = {
@@ -15,17 +15,19 @@ type SubmitValues = {
     [key: string]: any;
 };
 
-function extractTitleAndDataFromText(text: string): TimelineEvent {
-    // Expect formats like:
-    // "Reasoning: <text>", "Calling tool: <text>", "Processing results from: <text>", "Agent transfer: <text>"
-    const idx = text.indexOf(":");
-    if (idx > 0) {
-        return {
-            title: text.slice(0, idx).trim(),
-            data: text.slice(idx + 1).trim(),
-        };
+function mapEventTypeToTitle(eventType?: string): string {
+    switch ((eventType || "").toLowerCase()) {
+        case "reasoning":
+            return "Reasoning";
+        case "tool_call":
+            return "Calling tool";
+        case "tool_result":
+            return "Tool Executed";
+        case "agent_transfer":
+            return "Agent transfer";
+        default:
+            return "Update";
     }
-    return { title: "Update", data: text };
 }
 
 function readJsonFromDataLine(line: string): any | null {
@@ -46,7 +48,10 @@ export function useExternalStream(options: UseExternalStreamOptions) {
     const aiMsgIdRef = useRef<string | null>(null);
     const artifactBufferRef = useRef<string>("");
 
-    const clientUrl = useMemo(() => `${apiUrl.replace(/\/$/, "")}${streamPath}`, [apiUrl, streamPath]);
+    const clientUrl = useMemo(
+        () => `${apiUrl.replace(/\/$/, "")}${streamPath}`,
+        [apiUrl, streamPath]
+    );
 
     const stop = useCallback(() => {
         if (abortRef.current) abortRef.current.abort();
@@ -55,7 +60,6 @@ export function useExternalStream(options: UseExternalStreamOptions) {
 
     const submit = useCallback(
         async (values: SubmitValues) => {
-            // optimistic: take the last human from values, append locally
             const last = values.messages?.at(-1);
             if (last && last.type === "human") {
                 setMessages((prev) => [...prev, last]);
@@ -75,7 +79,6 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                 signal: controller.signal,
             });
 
-            // Basic SSE reader
             const reader = res.body?.getReader();
             if (!reader) {
                 setIsLoading(false);
@@ -86,8 +89,6 @@ export function useExternalStream(options: UseExternalStreamOptions) {
             let buf = "";
 
             const flushSseChunk = (chunk: string) => {
-                // Parse one SSE chunk separated by \n\n
-                // Lines can be: event: <name>, data: <json>
                 const lines = chunk.split("\n").map((l) => l.trim()).filter(Boolean);
                 const dataLine = lines.find((l) => l.startsWith("data:"))?.slice(5).trim();
                 if (!dataLine) return;
@@ -95,13 +96,11 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                 const payload = readJsonFromDataLine(dataLine);
                 if (!payload || typeof payload !== "object") return;
 
-                // JSON-RPC payload.result
                 const result = payload.result ?? {};
                 const kind = result.kind; // "status-update" | "artifact-update"
                 const finalFlag = !!result.final;
 
                 if (kind === "artifact-update") {
-                    // accumulate artifact text chunks
                     const parts = result.artifact?.parts ?? [];
                     const chunkText = parts
                         .filter((p: any) => p?.kind === "text" && typeof p.text === "string")
@@ -109,11 +108,11 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                         .join("");
 
                     if (chunkText.length > 0) {
-                        artifactBufferRef.current += (artifactBufferRef.current ? "" : "") + chunkText;
+                        artifactBufferRef.current += chunkText;
 
-                        // upsert a live AI message
                         if (!aiMsgIdRef.current) {
-                            aiMsgIdRef.current = result.taskId || result.contextId || crypto.randomUUID();
+                            aiMsgIdRef.current =
+                                result.taskId || result.contextId || crypto.randomUUID();
                             setMessages((prev) => [
                                 ...prev,
                                 {
@@ -132,17 +131,24 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                             );
                         }
                     }
-                } else if (kind === "status-update") {
-                    // timeline event from status.message.parts[].text
-                    const text =
-                        result?.status?.message?.parts
-                            ?.filter((p: any) => p?.kind === "text" && typeof p.text === "string")
-                            ?.map((p: any) => p.text)
-                            ?.join("\n") ?? "";
+                    return;
+                }
 
-                    if (text) {
-                        const e = extractTitleAndDataFromText(text);
-                        onUpdateEvent?.(e);
+                if (kind === "status-update") {
+                    const parts = Array.isArray(result?.status?.message?.parts)
+                        ? result.status.message.parts
+                        : [];
+
+                    // take first text part with metadata.eventType
+                    const textPart = parts.find(
+                        (p: any) => p?.kind === "text" && typeof p.text === "string"
+                    );
+
+                    if (textPart) {
+                        const eventType = textPart?.metadata?.eventType as string | undefined;
+                        const title = mapEventTypeToTitle(eventType);
+                        const data = textPart.text as string;
+                        onUpdateEvent?.({ title, data });
                     }
 
                     if (finalFlag) {
@@ -152,14 +158,12 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                 }
             };
 
-            // Stream loop
             try {
                 for (; ;) {
                     const { done, value } = await reader.read();
                     if (done) break;
                     buf += decoder.decode(value, { stream: true });
 
-                    // Process complete SSE frames separated by \n\n
                     let idx: number;
                     while ((idx = buf.indexOf("\n\n")) >= 0) {
                         const chunk = buf.slice(0, idx);
@@ -169,8 +173,8 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                         }
                     }
                 }
-            } catch (e) {
-                // aborted or network error
+            } catch {
+                // ignored (abort/network)
             } finally {
                 setIsLoading(false);
                 abortRef.current = null;
