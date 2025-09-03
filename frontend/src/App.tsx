@@ -73,8 +73,12 @@ export default function App() {
   // });
 
   const thread = useExternalStream({
-    apiUrl: "https://event-api.speakmultiapp.com",
-    streamPath: "/threads", // <-- your endpoint path
+    // apiUrl: "https://event-api.speakmultiapp.com",
+    // apiUrl: "http://localhost:59503",
+    // apiUrl: "http://localhost:10000",
+    // streamPath: "/agents/87bec1ff-e905-43a2-9a62-ae0b91abf44a/invoke/stream", // <-- your endpoint path
+    apiUrl: "https://oneplace-api.speakmultiapp.com",
+    streamPath: "/op_chat/stream",
     onUpdateEvent: (evt) => {
       // evt: { title, data }
       setProcessedEventsTimeline((prev) => [...prev, { title: evt.title, data: evt.data }]);

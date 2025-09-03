@@ -60,6 +60,7 @@ export function useExternalStream(options: UseExternalStreamOptions) {
 
     const submit = useCallback(
         async (values: SubmitValues) => {
+            console.log("submit", values);
             const last = values.messages?.at(-1);
             if (last && last.type === "human") {
                 setMessages((prev) => [...prev, last]);
@@ -74,8 +75,12 @@ export function useExternalStream(options: UseExternalStreamOptions) {
 
             const res = await fetch(clientUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(values),
+                headers: { "Content-Type": "application/json", Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmM4Nzg5OC03MGMwLTQzMjAtOTZiZi1hMjI0ZWY5ZjI3NjMifQ.3HxEAI26XSq1S-tJCS1pOXsvjexGuAARqCy_vj5LiAo" },
+                // body: JSON.stringify(values),
+                body: JSON.stringify({
+                    'user_query': last?.content, "workspace_id": "71f6b9a5-9600-414f-a54b-50f111ff0508",
+                    "domain_id": "70e6f5d6-b659-4b1e-be71-9b789923f97b"
+                }),
                 signal: controller.signal,
             });
 
