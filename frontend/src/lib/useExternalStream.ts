@@ -79,7 +79,7 @@ export function useExternalStream(options: UseExternalStreamOptions) {
                 // body: JSON.stringify(values),
                 body: JSON.stringify({
                     'user_query': last?.content, "workspace_id": "71f6b9a5-9600-414f-a54b-50f111ff0508",
-                    "domain_id": "70e6f5d6-b659-4b1e-be71-9b789923f97b"
+                    "domain_id": "cf37e37e-4a39-4d52-9906-1ad3be436833"
                 }),
                 signal: controller.signal,
             });
