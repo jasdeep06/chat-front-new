@@ -121,11 +121,16 @@ export default function App() {
 
   return (
       <div
-        className="flex text-gray-900 font-sans antialiased bg-white overflow-hidden"
-        style={{ height: "calc(100vh - 65px)" }}
+        className="flex text-white font-sans antialiased gradient-bg overflow-hidden relative"
+        style={{ height: "100vh" }}
       >
+        {/* Ambient light effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse animation-delay-400" />
+        
         <main
-          className={`h-full w-full max-w-4xl mx-auto transition-all duration-300`}
+          className={`h-full w-full max-w-5xl mx-auto transition-all duration-500 relative z-10 p-4`}
         >
           {thread.messages.length === 0 ? (
             <WelcomeScreen
@@ -142,15 +147,21 @@ export default function App() {
             />
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <h1 className="text-2xl text-red-600 font-bold">Error</h1>
-                <p className="text-red-600">{JSON.stringify(error)}</p>
+              <div className="glass-card rounded-2xl p-8 flex flex-col items-center justify-center gap-6 max-w-md mx-auto smooth-transition">
+                <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-2">
+                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl text-red-400 font-bold">Something went wrong</h1>
+                <p className="text-gray-300 text-center leading-relaxed">{JSON.stringify(error)}</p>
 
                 <Button
+                  className="glass-button text-white font-medium px-6 py-3 rounded-xl smooth-transition"
                   variant="destructive"
                   onClick={() => window.location.reload()}
                 >
-                  Retry
+                  Try Again
                 </Button>
               </div>
             </div>

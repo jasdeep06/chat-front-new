@@ -58,29 +58,27 @@ export const InputForm: React.FC<InputFormProps> = ({
   return (
     <form
       onSubmit={handleInternalSubmit}
-      className={`flex flex-col gap-2 p-3 pb-4`}
+      className={`flex flex-col gap-4`}
     >
       <div
-        className={`flex flex-row items-center justify-between text-gray-900 rounded-3xl rounded-bl-sm ${
-          hasHistory ? "rounded-br-sm" : ""
-        } break-words min-h-7 bg-gray-100 border border-gray-200 px-4 pt-3 `}
+        className={`glass-input flex flex-row items-center justify-between text-white rounded-2xl break-words min-h-7 px-6 pt-4 pb-2 smooth-transition hover:shadow-lg`}
       >
         <Textarea
           value={internalInputValue}
           onChange={(e) => setInternalInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Which countries has the highest migrant population?"
-          className={`w-full text-gray-900 placeholder-gray-500 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none bg-transparent
-                        md:text-base  min-h-[56px] max-h-[200px]`}
+          placeholder="Ask me anything..."
+          className={`w-full text-white placeholder-gray-400 resize-none border-0 focus:outline-none focus:ring-0 outline-none focus-visible:ring-0 shadow-none bg-transparent
+                        md:text-base font-medium min-h-[56px] max-h-[200px] placeholder:text-gray-400/70`}
           rows={1}
         />
-        <div className="-mt-3">
+        <div className="flex items-center gap-3 -mt-2">
           {isLoading ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-2 cursor-pointer rounded-full transition-all duration-200"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-3 cursor-pointer rounded-full smooth-transition glow-accent"
               onClick={onCancel}
             >
               <StopCircle className="h-5 w-5" />
@@ -88,53 +86,52 @@ export const InputForm: React.FC<InputFormProps> = ({
           ) : (
             <Button
               type="submit"
-              variant="ghost"
-              className={`${
+              className={`glass-button ${
                 isSubmitDisabled
-                  ? "text-gray-400"
-                  : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              } p-2 cursor-pointer rounded-full transition-all duration-200 text-base`}
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:glow-primary"
+              } px-6 py-3 cursor-pointer rounded-xl font-medium text-white smooth-transition flex items-center gap-2`}
               disabled={selectedDomains === null || isSubmitDisabled}
             >
-              Search
-              <Send className="h-5 w-5" />
+              <span>Search</span>
+              <Send className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex flex-row gap-2">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-2 max-w-[100%] sm:max-w-[90%] shadow-sm hover:bg-gray-100 transition-colors">
-            <Cpu className="h-4 w-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-600">Domain:</span>
+        <div className="flex flex-row gap-3">
+          <div className="glass-card flex items-center gap-3 text-white rounded-xl px-4 py-3 max-w-[100%] sm:max-w-[90%] smooth-transition hover:shadow-lg">
+            <Cpu className="h-4 w-4 text-purple-400" />
+            <span className="text-sm font-medium text-gray-300">Domain:</span>
             <Select 
               value={selectedDomains || undefined} 
               onValueChange={handleDomainSelect}
             >
-              <SelectTrigger className="w-auto min-w-[120px] bg-transparent border-none shadow-none p-0 h-auto focus:ring-0 text-gray-700 font-medium">
+              <SelectTrigger className="w-auto min-w-[120px] bg-transparent border-none shadow-none p-0 h-auto focus:ring-0 text-white font-medium">
                 <SelectValue placeholder="Select domain" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg min-w-[200px]">
+              <SelectContent className="glass-card border border-gray-600/30 shadow-2xl rounded-xl min-w-[200px] backdrop-blur-xl">
                 {loading ? (
-                  <div className="flex items-center justify-center p-3">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2 text-blue-500" />
-                    <span className="text-sm text-gray-600">Loading domains...</span>
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2 text-purple-400" />
+                    <span className="text-sm text-gray-300">Loading domains...</span>
                   </div>
                 ) : domains.length > 0 ? (
                   domains.map((domain) => (
                     <SelectItem
                       value={domain.domain_id}
                       key={domain.domain_id}
-                      className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer py-2.5 px-3 transition-colors"
+                      className="hover:bg-purple-500/20 focus:bg-purple-500/20 cursor-pointer py-3 px-4 transition-colors text-white rounded-lg mx-1"
                     >
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                        <span className="text-gray-700 font-medium">{domain.domain_name}</span>
+                      <div className="flex items-center gap-3">
+                        <Zap className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+                        <span className="text-gray-200 font-medium">{domain.domain_name}</span>
                       </div>
                     </SelectItem>
                   ))
                 ) : (
-                  <div className="flex items-center justify-center p-3 text-sm text-gray-500">
+                  <div className="flex items-center justify-center p-4 text-sm text-gray-400">
                     No domains available
                   </div>
                 )}
@@ -144,7 +141,7 @@ export const InputForm: React.FC<InputFormProps> = ({
         </div>
         {hasHistory && (
           <Button
-            className="bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm transition-colors rounded-lg px-3 py-2"
+            className="glass-button text-white hover:glow-accent shadow-lg smooth-transition rounded-xl px-4 py-3 font-medium"
             variant="outline"
             onClick={() => window.location.reload()}
           >

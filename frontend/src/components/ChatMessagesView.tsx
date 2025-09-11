@@ -164,10 +164,32 @@ const HumanMessageBubble: React.FC<HumanMessageBubbleProps> = ({
 }) => {
   return (
     <div
-      className={`text-gray-900 rounded-3xl break-words min-h-7 bg-blue-100 border border-blue-200 max-w-[100%] sm:max-w-[90%] px-4 pt-3 rounded-br-lg`}
+      className={`message-bubble-user text-white rounded-2xl break-words min-h-7 max-w-[100%] sm:max-w-[90%] px-6 py-4 rounded-br-lg smooth-transition hover:shadow-xl animate-fadeInUp`}
     >
       <ReactMarkdown 
-        components={mdComponents}
+        components={{
+          ...mdComponents,
+          p: ({ className, children, ...props }: MdComponentProps) => (
+            <p className={cn("mb-2 last:mb-0 leading-7 text-white", className)} {...props}>
+              {children}
+            </p>
+          ),
+          h1: ({ className, children, ...props }: MdComponentProps) => (
+            <h1 className={cn("text-2xl font-bold mt-4 mb-2 text-white", className)} {...props}>
+              {children}
+            </h1>
+          ),
+          h2: ({ className, children, ...props }: MdComponentProps) => (
+            <h2 className={cn("text-xl font-bold mt-3 mb-2 text-white", className)} {...props}>
+              {children}
+            </h2>
+          ),
+          h3: ({ className, children, ...props }: MdComponentProps) => (
+            <h3 className={cn("text-lg font-bold mt-3 mb-1 text-white", className)} {...props}>
+              {children}
+            </h3>
+          ),
+        }}
         remarkPlugins={[remarkGfm]}
       >
         {typeof message.content === "string"
@@ -207,9 +229,9 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
   const isLiveActivityForThisBubble = isLastMessage && isOverallLoading;
 
   return (
-    <div className={`relative break-words flex flex-col w-full`}>
+    <div className={`message-bubble-ai rounded-2xl break-words flex flex-col w-full max-w-[85%] md:max-w-[80%] px-6 py-4 smooth-transition hover:shadow-xl animate-fadeInUp`}>
       {activityForThisBubble && activityForThisBubble.length > 0 && (
-        <div className="mb-3 border-b border-gray-200 pb-3 text-xs">
+        <div className="mb-4 border-b border-gray-600/30 pb-4 text-xs">
           <ActivityTimeline
             processedEvents={activityForThisBubble}
             isLoading={isLiveActivityForThisBubble}
@@ -217,8 +239,44 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
         </div>
       )}
       <ReactMarkdown 
-        components={mdComponents}
+        components={{
+          ...mdComponents,
+          p: ({ className, children, ...props }: MdComponentProps) => (
+            <p className={cn("mb-3 last:mb-0 leading-7 text-gray-200", className)} {...props}>
+              {children}
+            </p>
+          ),
+          h1: ({ className, children, ...props }: MdComponentProps) => (
+            <h1 className={cn("text-2xl font-bold mt-4 mb-2 text-white", className)} {...props}>
+              {children}
+            </h1>
+          ),
+          h2: ({ className, children, ...props }: MdComponentProps) => (
+            <h2 className={cn("text-xl font-bold mt-3 mb-2 text-white", className)} {...props}>
+              {children}
+            </h2>
+          ),
+          h3: ({ className, children, ...props }: MdComponentProps) => (
+            <h3 className={cn("text-lg font-bold mt-3 mb-1 text-white", className)} {...props}>
+              {children}
+            </h3>
+          ),
+          a: ({ className, children, href, ...props }: MdComponentProps) => (
+            <Badge className="text-xs mx-0.5 bg-purple-500/20 text-purple-300 border-purple-400/30">
+              <a
+                className={cn("text-purple-300 hover:text-purple-200 text-xs", className)}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                {...props}
+              >
+                {children}
+              </a>
+            </Badge>
+          ),
+        }}
         remarkPlugins={[remarkGfm]}
+        className="text-sm md:text-base leading-6 space-y-2 mb-4"
       >
         {typeof message.content === "string"
           ? message.content
@@ -226,7 +284,7 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
       </ReactMarkdown>
       <Button
         variant="outline"
-        className={`cursor-pointer bg-gray-100 border-gray-200 text-gray-700 self-end hover:bg-gray-200 ${
+        className={`glass-button cursor-pointer text-gray-300 hover:text-white self-end hover:glow-accent smooth-transition px-3 py-2 rounded-lg text-sm ${
           message.content.length > 0 ? "visible" : "hidden"
         }`}
         onClick={() =>
@@ -238,8 +296,8 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
           )
         }
       >
-        {copiedMessageId === message.id ? "Copied" : "Copy"}
-        {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+        <span className="mr-2">{copiedMessageId === message.id ? "Copied" : "Copy"}</span>
+        {copiedMessageId === message.id ? <CopyCheck className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
       </Button>
     </div>
   );
@@ -321,7 +379,7 @@ export function ChatMessagesView({
   return (
     <div className="flex flex-col h-full w-full">
       <ScrollArea className="flex-1 overflow-y-auto" ref={scrollAreaRef}>
-        <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto pt-16 ">
+        <div className="p-6 md:p-8 space-y-4 max-w-5xl mx-auto pt-8">
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
             return (
@@ -355,10 +413,8 @@ export function ChatMessagesView({
           {isLoading &&
             (messages.length === 0 ||
               messages[messages.length - 1].type === "human") && (
-              <div className="flex items-start gap-3 mt-3">
-                {" "}
-                {/* AI message row structure */}
-                <div className="relative group max-w-[85%] md:max-w-[80%] rounded-xl p-3 shadow-sm break-words bg-gray-100 border border-gray-200 text-gray-900 rounded-bl-none w-full min-h-[56px]">
+              <div className="flex items-start gap-3 mt-4">
+                <div className="message-bubble-ai rounded-2xl px-6 py-4 shadow-lg break-words max-w-[85%] md:max-w-[80%] w-full min-h-[64px] animate-fadeInUp">
                   {liveActivityEvents.length > 0 ? (
                     <div className="text-xs">
                       <ActivityTimeline
@@ -368,8 +424,8 @@ export function ChatMessagesView({
                     </div>
                   ) : (
                     <div className="flex items-center justify-start h-full">
-                      <Loader2 className="h-5 w-5 animate-spin text-gray-500 mr-2" />
-                      <span>Processing...</span>
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-400 mr-3" />
+                      <span className="text-gray-300 font-medium">Processing your request...</span>
                     </div>
                   )}
                 </div>
@@ -379,18 +435,22 @@ export function ChatMessagesView({
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-      <InputForm
-        onSubmit={onSubmit}
-        isLoading={isLoading}
-        onCancel={onCancel}
-        hasHistory={messages.length > 0}
-        domains={domains}
-        selectedWorkspace={selectedWorkspace}
-        selectedDomains={selectedDomains}
-        loading={loading}
-        handleWorkspaceSelect={handleWorkspaceSelect}
-        handleDomainSelect={handleDomainSelect}
-      />
+      <div className="p-4">
+        <div className="glass-card rounded-3xl p-6 max-w-5xl mx-auto smooth-transition hover:shadow-2xl">
+          <InputForm
+            onSubmit={onSubmit}
+            isLoading={isLoading}
+            onCancel={onCancel}
+            hasHistory={messages.length > 0}
+            domains={domains}
+            selectedWorkspace={selectedWorkspace}
+            selectedDomains={selectedDomains}
+            loading={loading}
+            handleWorkspaceSelect={handleWorkspaceSelect}
+            handleDomainSelect={handleDomainSelect}
+          />
+        </div>
+      </div>
     </div>
   );
 }
