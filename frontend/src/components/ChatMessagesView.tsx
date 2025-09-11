@@ -2,22 +2,24 @@ import type React from "react";
 import type { Message } from "@langchain/langgraph-sdk";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Copy, CopyCheck } from "lucide-react";
-import { InputForm } from "@/components/InputForm";
+import { InputForm } from "./InputForm";
 import { Button } from "@/components/ui/button";
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   ActivityTimeline,
   ProcessedEvent,
-} from "@/components/ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
+} from "./ActivityTimeline"; // Assuming ActivityTimeline is in the same dir or adjust path
+import { Domain } from "@/lib/types";
 
 // Markdown component props type from former ReportView
 type MdComponentProps = {
   className?: string;
   children?: ReactNode;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 // Markdown components (from former ReportView.tsx)
@@ -45,7 +47,7 @@ const mdComponents = {
   a: ({ className, children, href, ...props }: MdComponentProps) => (
     <Badge className="text-xs mx-0.5">
       <a
-        className={cn("text-blue-400 hover:text-blue-300 text-xs", className)}
+        className={cn("text-blue-600 hover:text-blue-700 text-xs", className)}
         href={href}
         target="_blank"
         rel="noopener noreferrer"
@@ -73,7 +75,7 @@ const mdComponents = {
   blockquote: ({ className, children, ...props }: MdComponentProps) => (
     <blockquote
       className={cn(
-        "border-l-4 border-neutral-600 pl-4 italic my-3 text-sm",
+        "border-l-4 border-gray-300 pl-4 italic my-3 text-sm",
         className
       )}
       {...props}
@@ -84,7 +86,7 @@ const mdComponents = {
   code: ({ className, children, ...props }: MdComponentProps) => (
     <code
       className={cn(
-        "bg-neutral-900 rounded px-1 py-0.5 font-mono text-xs",
+        "bg-gray-100 rounded px-1 py-0.5 font-mono text-xs text-gray-800",
         className
       )}
       {...props}
@@ -95,7 +97,7 @@ const mdComponents = {
   pre: ({ className, children, ...props }: MdComponentProps) => (
     <pre
       className={cn(
-        "bg-neutral-900 p-3 rounded-lg overflow-x-auto font-mono text-xs my-3",
+        "bg-gray-100 p-3 rounded-lg overflow-x-auto font-mono text-xs my-3 text-gray-800",
         className
       )}
       {...props}
@@ -104,19 +106,34 @@ const mdComponents = {
     </pre>
   ),
   hr: ({ className, ...props }: MdComponentProps) => (
-    <hr className={cn("border-neutral-600 my-4", className)} {...props} />
+    <hr className={cn("border-gray-300 my-4", className)} {...props} />
   ),
   table: ({ className, children, ...props }: MdComponentProps) => (
-    <div className="my-3 overflow-x-auto">
-      <table className={cn("border-collapse w-full", className)} {...props}>
+    <div className="my-4 overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+      <table className={cn("border-collapse w-full bg-white", className)} {...props}>
         {children}
       </table>
     </div>
   ),
+  thead: ({ className, children, ...props }: MdComponentProps) => (
+    <thead className={cn("bg-gray-50", className)} {...props}>
+      {children}
+    </thead>
+  ),
+  tbody: ({ className, children, ...props }: MdComponentProps) => (
+    <tbody className={cn("divide-y divide-gray-200", className)} {...props}>
+      {children}
+    </tbody>
+  ),
+  tr: ({ className, children, ...props }: MdComponentProps) => (
+    <tr className={cn("hover:bg-gray-50", className)} {...props}>
+      {children}
+    </tr>
+  ),
   th: ({ className, children, ...props }: MdComponentProps) => (
     <th
       className={cn(
-        "border border-neutral-600 px-3 py-2 text-left font-bold",
+        "border-b border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50",
         className
       )}
       {...props}
@@ -126,7 +143,7 @@ const mdComponents = {
   ),
   td: ({ className, children, ...props }: MdComponentProps) => (
     <td
-      className={cn("border border-neutral-600 px-3 py-2", className)}
+      className={cn("border-b border-gray-200 px-4 py-3 text-sm text-gray-900", className)}
       {...props}
     >
       {children}
@@ -147,9 +164,12 @@ const HumanMessageBubble: React.FC<HumanMessageBubbleProps> = ({
 }) => {
   return (
     <div
-      className={`text-white rounded-3xl break-words min-h-7 bg-neutral-700 max-w-[100%] sm:max-w-[90%] px-4 pt-3 rounded-br-lg`}
+      className={`text-gray-900 rounded-3xl break-words min-h-7 bg-blue-100 border border-blue-200 max-w-[100%] sm:max-w-[90%] px-4 pt-3 rounded-br-lg`}
     >
-      <ReactMarkdown components={mdComponents}>
+      <ReactMarkdown 
+        components={mdComponents}
+        remarkPlugins={[remarkGfm]}
+      >
         {typeof message.content === "string"
           ? message.content
           : JSON.stringify(message.content)}
@@ -187,23 +207,26 @@ const AiMessageBubble: React.FC<AiMessageBubbleProps> = ({
   const isLiveActivityForThisBubble = isLastMessage && isOverallLoading;
 
   return (
-    <div className={`relative break-words flex flex-col`}>
+    <div className={`relative break-words flex flex-col w-full`}>
       {activityForThisBubble && activityForThisBubble.length > 0 && (
-        <div className="mb-3 border-b border-neutral-700 pb-3 text-xs">
+        <div className="mb-3 border-b border-gray-200 pb-3 text-xs">
           <ActivityTimeline
             processedEvents={activityForThisBubble}
             isLoading={isLiveActivityForThisBubble}
           />
         </div>
       )}
-      <ReactMarkdown components={mdComponents}>
+      <ReactMarkdown 
+        components={mdComponents}
+        remarkPlugins={[remarkGfm]}
+      >
         {typeof message.content === "string"
           ? message.content
           : JSON.stringify(message.content)}
       </ReactMarkdown>
       <Button
-        variant="default"
-        className={`cursor-pointer bg-neutral-700 border-neutral-600 text-neutral-300 self-end ${
+        variant="outline"
+        className={`cursor-pointer bg-gray-100 border-gray-200 text-gray-700 self-end hover:bg-gray-200 ${
           message.content.length > 0 ? "visible" : "hidden"
         }`}
         onClick={() =>
@@ -226,10 +249,16 @@ interface ChatMessagesViewProps {
   messages: Message[];
   isLoading: boolean;
   scrollAreaRef: React.RefObject<HTMLDivElement | null>;
-  onSubmit: (inputValue: string, effort: string, model: string) => void;
+  onSubmit: (inputValue: string) => void;
   onCancel: () => void;
   liveActivityEvents: ProcessedEvent[];
   historicalActivities: Record<string, ProcessedEvent[]>;
+  domains: Domain[];
+  selectedWorkspace: string | null;
+  selectedDomains: string | null;
+  loading: boolean;
+  handleWorkspaceSelect: (workspaceId: string) => void;
+  handleDomainSelect: (domainId: string) => void;
 }
 
 export function ChatMessagesView({
@@ -240,8 +269,45 @@ export function ChatMessagesView({
   onCancel,
   liveActivityEvents,
   historicalActivities,
+  domains,
+  selectedWorkspace,
+  selectedDomains,
+  loading,
+  handleWorkspaceSelect,
+  handleDomainSelect,
 }: ChatMessagesViewProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Enhanced auto-scroll functionality
+  useEffect(() => {
+    const scrollToBottom = () => {
+      // Try multiple scroll methods for better reliability
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'end' 
+        });
+      }
+      
+      if (scrollAreaRef.current) {
+        const scrollViewport = scrollAreaRef.current.querySelector(
+          "[data-radix-scroll-area-viewport]"
+        );
+        if (scrollViewport) {
+          scrollViewport.scrollTo({
+            top: scrollViewport.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }
+    };
+
+    // Multiple attempts to ensure scrolling works
+    scrollToBottom();
+    setTimeout(scrollToBottom, 50);
+    setTimeout(scrollToBottom, 200);
+  }, [messages, liveActivityEvents, isLoading, scrollAreaRef]);
 
   const handleCopy = async (text: string, messageId: string) => {
     try {
@@ -253,9 +319,9 @@ export function ChatMessagesView({
     }
   };
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       <ScrollArea className="flex-1 overflow-y-auto" ref={scrollAreaRef}>
-        <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto pt-16">
+        <div className="p-4 md:p-6 space-y-2 max-w-4xl mx-auto pt-16 ">
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
             return (
@@ -292,7 +358,7 @@ export function ChatMessagesView({
               <div className="flex items-start gap-3 mt-3">
                 {" "}
                 {/* AI message row structure */}
-                <div className="relative group max-w-[85%] md:max-w-[80%] rounded-xl p-3 shadow-sm break-words bg-neutral-800 text-neutral-100 rounded-bl-none w-full min-h-[56px]">
+                <div className="relative group max-w-[85%] md:max-w-[80%] rounded-xl p-3 shadow-sm break-words bg-gray-100 border border-gray-200 text-gray-900 rounded-bl-none w-full min-h-[56px]">
                   {liveActivityEvents.length > 0 ? (
                     <div className="text-xs">
                       <ActivityTimeline
@@ -302,13 +368,15 @@ export function ChatMessagesView({
                     </div>
                   ) : (
                     <div className="flex items-center justify-start h-full">
-                      <Loader2 className="h-5 w-5 animate-spin text-neutral-400 mr-2" />
+                      <Loader2 className="h-5 w-5 animate-spin text-gray-500 mr-2" />
                       <span>Processing...</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
+          {/* Invisible element to scroll to */}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
       <InputForm
@@ -316,6 +384,12 @@ export function ChatMessagesView({
         isLoading={isLoading}
         onCancel={onCancel}
         hasHistory={messages.length > 0}
+        domains={domains}
+        selectedWorkspace={selectedWorkspace}
+        selectedDomains={selectedDomains}
+        loading={loading}
+        handleWorkspaceSelect={handleWorkspaceSelect}
+        handleDomainSelect={handleDomainSelect}
       />
     </div>
   );
