@@ -1,0 +1,2 @@
+export const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmM4Nzg5OC03MGMwLTQzMjAtOTZiZi1hMjI0ZWY5ZjI3NjMifQ.3HxEAI26XSq1S-tJCS1pOXsvjexGuAARqCy_vj5LiAo";
+export const BASE_URL = "https://oneplace-api.speakmultiapp.com";    
